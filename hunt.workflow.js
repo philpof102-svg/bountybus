@@ -16,20 +16,22 @@ export const meta = {
 //   finders: [{ key, dir, brief }]  // one per attack surface. dir = an already-cloned local path.
 //   maxFindingsPerFinder?: number   // default 3
 // }
-const IMPACTS = (args && args.impacts) || ['rce', 'theft_funds', 'theft_nfts']
-const FINDERS = (args && args.finders) || []
-const MAX = (args && args.maxFindingsPerFinder) || 3
+// args may arrive as a parsed object (inline run) or a JSON string (scriptPath run) — accept both.
+const A = (typeof args === 'string') ? JSON.parse(args) : (args || {})
+const IMPACTS = A.impacts || ['rce', 'theft_funds', 'theft_nfts']
+const FINDERS = A.finders || []
+const MAX = A.maxFindingsPerFinder || 3
 if (!FINDERS.length) throw new Error('bountybus: args.finders is required (one {key,dir,brief} per attack surface)')
 
 const SCOPE = `
 BOUNTY SCOPE — only these impacts count as PAYABLE, everything else is OUT OF SCOPE:
   ${IMPACTS.map((i) => `- ${i}`).join('\n  ')}
-${args && args.context ? `\nTARGET CONTEXT:\n${args.context}` : ''}
+${A.context ? `\nTARGET CONTEXT:\n${A.context}` : ''}
 GENERIC OUT OF SCOPE (do NOT report, or mark in_scope=false): anything needing privileged access,
 operator config-file control, leaked keys, social engineering/phishing, pure DDoS, theoretical
 side-channels with no runnable PoC, self-XSS, missing headers, best-practice notes, or any impact
 that requires the victim to perform an un-prompted action outside the normal workflow.
-${args && args.outOfScope ? `PROGRAM-SPECIFIC OUT OF SCOPE:\n${args.outOfScope}` : ''}
+${A.outOfScope ? `PROGRAM-SPECIFIC OUT OF SCOPE:\n${A.outOfScope}` : ''}
 A finding is only worth reporting if a REMOTE or LOCAL-UNPRIVILEGED attacker with realistic access
 can reach it AND it maps to one of the payable impacts above WITH a runnable PoC.`
 
