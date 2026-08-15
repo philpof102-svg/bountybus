@@ -63,6 +63,23 @@ the accounting does, and costs ~90s of every run.
 That is worth more to the project than the refuted finding was, and it only appeared because the
 harness was actually built and run — not read. Reported as a courtesy note, not a bounty.
 
+## Pass 5 — measuring instead of reading
+
+With the toolchain unblocked, the deposit/withdraw math was tested rather than argued: a
+value-conservation and liveness harness ([`poc/gmsol-value-conservation.rs`](../poc/gmsol-value-conservation.rs))
+built on the **deployed** constants from `market_configs.toml`, not the crate's fixture.
+
+Measured: round trips lose **13–20 bps** (the fee) and never gain; across 24 escalating deposit
+sizes, 14 were accepted and 10 rejected by the `max_pool_value` ceiling, and **an existing LP could
+still withdraw after every single attempt**. So neither theft nor permanent freezing is reachable
+through that path — a much stronger statement than "we read it and it looked fine".
+
+Getting there took two wrong turns worth recording, because each briefly looked like a critical
+finding: summing long and short token amounts as if they shared a price produced a fake **+71%
+round-trip profit**, and running on the fixture's `fee_receiver_factor = 0.37` instead of the
+deployed `0.70` had already inverted an earlier profitability estimate. Both are written up in
+[`poc/README.md`](../poc/README.md).
+
 ## Takeaway
 
 Two real mechanisms surfaced across ~2.7M tokens of review; both died in adversarial verification,
