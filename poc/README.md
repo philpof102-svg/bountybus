@@ -62,6 +62,49 @@ cargo test -p gmsol-model --test liquidation_adl -- --nocapture
 Every path that moves money on a forced close either pays zero or pays the capped amount. Nothing
 leaks to the trader.
 
+## `gmsol-time-fees.rs`
+
+Borrowing accrual — the surface all three harnesses above miss, because they open and close inside
+the same instant and never call `move_clock_forward`. A protocol can look perfectly conservative
+under instant round trips and still let a trader hold leverage for free.
+
+```
+cargo test -p gmsol-model --test time_fees -- --nocapture
+```
+
+**Measured:** borrowing accrues correctly and scales linearly with pool usage —
+
+| Pool (usage) | rate/sec | extra cost of a 1-year hold |
+|---|---:|---:|
+| 1,000,000u (0.5%) | 9.5e9 | 15,007,187 |
+| 100,000u (5%) | 9.5e10 | 150,070,458 |
+| 20,000u (25%) | 4.76e11 | 750,320,765 |
+
+Churning 12×30d also costs strictly more than one continuous 360d hold, so leverage cannot be held
+for free by cycling.
+
+### The trap this file walked into, and what it exposed
+
+`TestMarket` initialises each clock **lazily**: `clocks.entry(kind).or_insert(now)`, so the *first*
+`just_passed_in_seconds(ClockKind::Borrowing)` call always reports **0 seconds elapsed**, however
+much time has passed. A test that moves the clock and then updates once measures exactly zero
+borrowing. Production does not have this problem — `programs/store`'s `update_fees_state()` runs
+before *every* order ("[Pre-execute] borrowing state updated"), so the clock is live from the
+opening order onward. Modelling both orders makes the fees appear, as the table shows.
+
+But the same trap catches the crate's own suite. Running it unmodified:
+
+```
+$ cargo test -p gmsol-model --test borrowing_fee -- --nocapture
+test_total_borrowing_with_high_borrowing_factor   -> TestPool { long_amount: 0, short_amount: 0 }
+test_total_borrowing_with_high_borrowing_factor_2 -> cumulative borrowing factor: 0
+test result: ok. 2 passed
+```
+
+Both tests advance the clock (one by **100 years**), both print **zero** borrowing, and both pass —
+they `println!` and never assert, exactly like `round_attack_deposit`. Two tests named for a high
+borrowing factor measure none of it.
+
 ## The three mistakes these files exist to prevent
 
 Both were made here, and both would have produced a confident, wrong "critical finding".
