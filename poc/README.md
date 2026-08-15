@@ -40,6 +40,28 @@ Invariants: a round trip at **unchanged price** must lose (fees are real, free m
 at −20% returned 497M against 1,000M collateral; a short at +20% returned 664M. Both directions
 lose when they should.
 
+## `gmsol-liquidation-adl.rs`
+
+The last value surface: forced closes. The earlier position harness passed
+`DecreasePositionFlags::default()` (every flag false), which means the liquidation path was never
+actually exercised — worth checking before believing any "positions are clean" claim.
+
+```
+cargo test -p gmsol-model --test liquidation_adl -- --nocapture
+```
+
+**Measured on deployed parameters:**
+
+| Invariant | Result |
+|---|---|
+| A solvent position cannot be liquidated | `NotLiquidatable` — no forced-close griefing |
+| Liquidation (10x, −15%) pays ≤ collateral | output **0** |
+| Insolvent close (20x, −20%) pays nothing | output **0**, `insolvent_close_step = Some(Pnl)` — the pool absorbs the shortfall |
+| PnL capping (ADL) actually binds | uncapped 4,999.9 → paid **1,999.0** units, exactly the configured 1% of pool value |
+
+Every path that moves money on a forced close either pays zero or pays the capped amount. Nothing
+leaks to the trader.
+
 ## The three mistakes these files exist to prevent
 
 Both were made here, and both would have produced a confident, wrong "critical finding".
@@ -63,6 +85,13 @@ Testing "shorts" that way produced a short that *profited* when the price rose, 
 a textbook sign bug, except the bug was in the test. Read the constructor before trusting the
 assertion it feeds.
 
-The pattern across all three: every one produced a *failing assertion that looked like a critical
+**4. A guard firing is not a bug, and a cap that does not bind may just be badly parameterised.**
+Trying to liquidate a healthy position returned `NotLiquidatable` — the protocol correctly refusing,
+which is itself an invariant worth asserting. Separately, a PnL cap set to 1% appeared not to bind:
+the pool was 100× larger than the position, so 1% of pool value exceeded the profit. Shrinking the
+pool made the cap bind exactly as configured. Before calling a control broken, check that your
+scenario actually reaches it.
+
+The pattern across all four: every one produced a *failing assertion that looked like a critical
 finding*. A harness that reports the first red test as a vulnerability is a false-positive machine.
 Reproduce, then attack your own instrumentation, then report.
