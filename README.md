@@ -41,6 +41,13 @@ security tool.
 4. **Synthesize** — rank survivors by severity; emit the full reject list with reasons. The reject
    list is the point, not an afterthought.
 
+**The false-clean guard.** The worst failure mode of a harness like this is not a missed bug — it is
+a finder pointed at a path that does not exist, returning "no findings" that reads exactly like a
+clean audit. This happened on a real run: four of six finders were aimed at guessed sub-paths and
+silently reviewed nothing. Every finder now reports `dir_ok`, and a run that could not read its
+target is surfaced as `misTargeted` **louder than the findings themselves**. Verify your paths
+before you trust a zero.
+
 ## Files
 
 - [`hunt.workflow.js`](hunt.workflow.js) — the harness, as a Claude Code Workflow script. Parameterized
