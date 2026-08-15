@@ -1,0 +1,23 @@
+{
+  "name": "bountybus",
+  "version": "0.1.0",
+  "description": "Adversarial multi-agent bug-bounty hunting harness: fan out finders across the attack surface, then try to refute every candidate before it survives. Defaults to 'no bug'; reports the misses next to the catches.",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "bug-bounty",
+    "audit",
+    "multi-agent",
+    "adversarial",
+    "immunefi",
+    "gitlawb",
+    "agent"
+  ],
+  "files": [
+    "hunt.workflow.js",
+    "PREFLIGHT.md",
+    "examples/"
+  ],
+  "author": "Philippe",
+  "type": "module"
+}
