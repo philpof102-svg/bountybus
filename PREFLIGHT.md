@@ -51,6 +51,13 @@ node -e 'console.log(require("<repo>/package.json").scripts)'   # look for test 
 If there is no harness and you cannot build one, a "finding" you cannot demonstrate is not
 submittable — decide that now, not after the hunt.
 
+**Prove the harness runs before you hunt, not after.** On a real GMTrade pass the verifier could not
+execute a PoC at all: on Windows `cargo test` fails for lack of an MSVC linker. The fix was not to
+install MSVC — it was to build on the Linux toolchain already present in WSL (`rustc`, `cargo`,
+`gcc`), copying the repo to a **native Linux filesystem** first, because building across `/mnt/c` is
+punishingly slow. Whatever the language, run the target's own test suite once, green, before you
+spend a single agent.
+
 ---
 
 Only when all four gates are green do you run `hunt.workflow.js`. The gates are also why an honest

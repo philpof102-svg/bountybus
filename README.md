@@ -56,6 +56,11 @@ before you trust a zero.
 - [`examples/hathor-2026-08.md`](examples/hathor-2026-08.md) — a **real run**: the 4 in-scope Hathor
   wallet repos, 6 finders + adversarial verify. Result: **0 payable findings**, with the near-misses
   and why each is out of scope. This is what an honest run looks like when the code is clean.
+- [`examples/gmtrade-2026-08.md`](examples/gmtrade-2026-08.md) — four passes against a
+  one-month-old Solana perps protocol, including the pass that was a **false clean** and the fix it
+  forced. Two real mechanisms surfaced; both died in verification, for reasons re-checked by hand.
+- [`examples/gmsol-courtesy-note.md`](examples/gmsol-courtesy-note.md) — what you send a project
+  when the mechanism is real but not payable: a plain disclosure, no severity claim, no bounty filing.
 
 ## Usage (Claude Code)
 
